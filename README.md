@@ -1,7 +1,7 @@
 # Aprendizaje en entornos complejos
 
 ## Información
-- **Alumnos:** Becerra Esteban, Cruzado Carlos, Ruzhytska Anastasia
+- **Alumnos:** Becerra Fernández, Esteban; Cruzado Esteban, Carlos; Ruzhytska Ruzhytska, Anastasiya
 - **Asignatura:** Extensiones de Machine Learning
 - **Curso:** 2024/2025
 - **Grupo:** BFARCE
