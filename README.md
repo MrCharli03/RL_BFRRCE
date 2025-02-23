@@ -19,7 +19,7 @@ El repositorio se organiza de la siguiente forma:
 - MonteCarloTodasLasVistas_Gymnasium.ipynb (cambiar a notebook 1) -> Aprendizaje en entornos complejos
 
 ## Instalación y Uso
-Para poder observar los experimentos realizados así como el estudio llevado a cabo se recomienda abrir en Colab el documento "main.ipynb", ejecutarlo para importar los archivos necesarios, y desde el mismo navegar por los otros notebooks implementados, titulados "Notebook1.ipynb", "Notebook2.ipynb", "Notebook3.ipynb", "Notebook4.ipynb".
+Para poder observar los experimentos realizados así como el estudio llevado a cabo se recomienda abrir en Colab el documento "main.ipynb", ejecutarlo para importar los archivos necesarios, y desde el mismo navegar por los otros notebooks implementados, titulados "Notebook1.ipynb", "Notebook2.ipynb", "Notebook3.ipynb", "Notebook4.ipynb". (A cambiar tbn)
 
 ## Tecnologías Utilizadas
 - **Lenguaje:** Python
