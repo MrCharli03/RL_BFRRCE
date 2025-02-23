@@ -12,23 +12,16 @@ Esta práctica tiene como objetivo abordar el aprendizaje en entornos complejos,
 ## Estructura
 El repositorio se organiza de la siguiente forma:
 - **src/**: Código fuente (.py) de los agentes y algoritmos implementados.
-- **notebooks/**: Notebooks (.ipynb) con la implementación y experimentos en el entorno Gymnasium, incluyendo:
-  - Notebook para la familiarización y experimentación básica con Gymnasium.
-  - Notebook(s) para el estudio comparativo de los algoritmos (Monte Carlo, SARSA, Q-Learning, etc.).
 - **docs/**: Documentación adicional e informes en formato PDF.
 - **data/**: Datos utilizados en los experimentos (si procede).
 - **README.md**: Este archivo.
 - **main.ipynb**: Notebook principal que enlaza y organiza la ejecución de los diferentes experimentos.
+- MonteCarloTodasLasVistas_Gymnasium.ipynb (cambiar a notebook 1) -> Aprendizaje en entornos complejos
 
 ## Instalación y Uso
-1. Clonar el repositorio en su entorno local o directamente en Google Colab.
-2. Abrir el archivo **main.ipynb** en Google Colab (o en el entorno de Jupyter Notebook).
-3. Ejecutar las celdas iniciales que instalan las dependencias y copian el repositorio.
-4. Navegar entre los notebooks para revisar y ejecutar los experimentos.  
-   
-*Nota:* Asegúrese de que todas las celdas se ejecuten sin errores para garantizar la reproducibilidad de los resultados.
+Para poder observar los experimentos realizados así como el estudio llevado a cabo se recomienda abrir en Colab el documento "main.ipynb", ejecutarlo para importar los archivos necesarios, y desde el mismo navegar por los otros notebooks implementados, titulados "Notebook1.ipynb", "Notebook2.ipynb", "Notebook3.ipynb", "Notebook4.ipynb".
 
 ## Tecnologías Utilizadas
 - **Lenguaje:** Python
 - **Entorno de Ejecución:** Jupyter Notebooks / Google Colab
-- **Librerías:** Gymnasium (https://gymnasium.farama.org/), NumPy, Matplotlib, entre otras utilizadas para el desarrollo de los agentes de aprendizaje por refuerzo.
+- **Librerías:** Gymnasium (https://gymnasium.farama.org/), NumPy, Matplotlib, tqdm.
