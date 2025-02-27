@@ -18,7 +18,7 @@ El repositorio se organiza de la siguiente forma:
 - **main.ipynb**: Notebook principal que enlaza y organiza la ejecución de los diferentes experimentos.
 - Notebook 1 -> Breve introducción del problema
 - Notebook 2 -> Monte Carlo con políticas epsilon-soft
-- Notebook 3 -> Métodos Tabulares: Monte Carlo (on-policy y off-policy)
+- Notebook 3 -> Estudio de algunos algoritmos básicos
 
 ## Instalación y Uso
 Para poder observar los experimentos realizados así como el estudio llevado a cabo se recomienda abrir en Colab el documento "main.ipynb", ejecutarlo para importar los archivos necesarios, y desde el mismo navegar por los otros notebooks implementados, titulados "Notebook1.ipynb", "Notebook2.ipynb", "Notebook3.ipynb".
