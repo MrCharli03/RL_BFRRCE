@@ -11,9 +11,8 @@ Esta práctica tiene como objetivo abordar el aprendizaje en entornos complejos,
 
 ## Estructura
 El repositorio se organiza de la siguiente forma:
-- **src/**: Código fuente (.py) de los agentes y algoritmos implementados.
 - **docs/**: Documentación adicional e informes en formato PDF.
-- **data/**: Datos utilizados en los experimentos (si procede).
+- **videos/**: Videos resultante del algoritmo de MonteCarlo).
 - **README.md**: Este archivo.
 - **main.ipynb**: Notebook principal que enlaza y organiza la ejecución de los diferentes experimentos.
 - Notebook 1 -> Breve introducción del problema
