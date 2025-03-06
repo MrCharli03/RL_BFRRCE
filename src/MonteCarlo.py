@@ -37,54 +37,43 @@ class MonteCarloOnPolicy:
             total_reward += reward
         return episode, total_reward
 
-    def train(self, target_policy, num_episodes=5000):
-      episode_rewards = []
+    def train(self, num_episodes=5000):  # ELIMINADO target_policy
+        episode_rewards = []
 
-      # Asegurar que target_policy es un defaultdict con valores por defecto
-      target_policy = defaultdict(lambda: np.ones(self.env.action_space.n) / self.env.action_space.n, target_policy)
+        for _ in range(num_episodes):
+            episode, total_reward = self.generate_episode()
+            episode_rewards.append(total_reward)
 
-      # Política de comportamiento (exploratoria uniforme)
-      behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) / self.env.action_space.n)
+            states, actions, rewards = zip(*episode)
+            G = 0
+            visited = set()
+            max_delta = 0  # Para registrar el mayor cambio en Q
 
-      for _ in range(num_episodes):
-          episode, total_reward = self.generate_episode(behavior_policy)
-          episode_rewards.append(total_reward)
+            for t in reversed(range(len(episode))):
+                state, action, reward = states[t], actions[t], rewards[t]
+                G = self.gamma * G + reward
 
-          states, actions, rewards = zip(*episode)
-          G = 0
-          W = 1
-          max_delta = 0  # Para registrar el mayor cambio en Q
+                if (state, action) not in visited:
+                    visited.add((state, action))
+                    old_Q = self.Q[state][action]  # Valor Q antes de actualizar
+                    self.returns[(state, action)].append(G)
+                    self.Q[state][action] = np.mean(self.returns[(state, action)])
 
-          for t in reversed(range(len(episode))):
-              state, action, reward = states[t], actions[t], rewards[t]
-              G = self.gamma * G + reward
+                    # Calculamos cuánto cambió el valor Q
+                    max_delta = max(max_delta, abs(old_Q - self.Q[state][action]))
 
-              old_Q = self.Q[state][action]  # Valor Q antes de actualizar
+                    # Actualización de la política ε-soft
+                    best_action = np.argmax(self.Q[state])
+                    for a in range(self.env.action_space.n):
+                        if a == best_action:
+                            self.policy[state][a] = 1 - self.epsilon + (self.epsilon / self.env.action_space.n)
+                        else:
+                            self.policy[state][a] = self.epsilon / self.env.action_space.n
 
-              self.C[state][action] += W
-              self.Q[state][action] += (W / self.C[state][action]) * (G - self.Q[state][action])
+            self.deltas.append(max_delta)  # Guardamos el cambio máximo de Q en este episodio
 
-              # Guardamos el cambio máximo en Q
-              max_delta = max(max_delta, abs(old_Q - self.Q[state][action]))
+        return self.Q, episode_rewards, self.deltas
 
-              # Comprobamos que target_policy[state] existe y aplicamos criterio de corte
-              optimal_action = np.argmax(target_policy[state])  # Ya garantizado que `state` existe
-              if action != optimal_action:
-                  break  # Si la acción no es óptima en la target policy, cortamos
-
-              # Actualizamos el peso de importancia
-              W *= 1.0 / behavior_policy[state][action]
-
-              # Evitar explosión de W
-              if W > 1e6:
-                  break
-
-          self.deltas.append(max_delta)  # Guardar el delta de este episodio
-
-      return self.Q, episode_rewards, self.deltas
-
-import numpy as np
-from collections import defaultdict
 
 class MonteCarloOffPolicy:
     def __init__(self, env, gamma=1.0):
