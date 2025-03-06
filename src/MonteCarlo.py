@@ -75,22 +75,26 @@ class MonteCarloOnPolicy:
         return self.Q, episode_rewards, self.deltas
 
 
+import numpy as np
+from collections import defaultdict
+
 class MonteCarloOffPolicy:
     def __init__(self, env, gamma=1.0):
         self.env = env
         self.gamma = gamma
-        self.Q = defaultdict(lambda: np.zeros(env.action_space.n))
-        self.C = defaultdict(lambda: np.zeros(env.action_space.n))  # Para ponderación de importancia
+        self.Q = defaultdict(lambda: np.zeros(env.action_space.n))  # Función de valor de acción
+        self.C = defaultdict(lambda: np.zeros(env.action_space.n))  # Ponderación de importancia acumulada
         self.deltas = []  # Para guardar los cambios máximos en Q
 
     def generate_episode(self, behavior_policy):
+        """ Genera un episodio siguiendo la política de comportamiento """
         episode = []
         state = self.env.reset()[0]
         done = False
         total_reward = 0
         while not done:
             action = np.random.choice(range(self.env.action_space.n), p=behavior_policy[state])
-            next_state, reward, done, truncated, info = self.env.step(action)
+            next_state, reward, done, truncated, _ = self.env.step(action)
             done = done or truncated
             episode.append((state, action, reward))
             state = next_state
@@ -98,10 +102,19 @@ class MonteCarloOffPolicy:
         return episode, total_reward
 
     def train(self, target_policy, num_episodes=5000):
+        """ Entrena la política objetivo con muestreo de importancia ponderado """
         episode_rewards = []
 
-        # Política de comportamiento (exploratoria uniforme)
+        # Asegurar que target_policy tenga valores inicializados
+        target_policy = defaultdict(lambda: np.ones(self.env.action_space.n) / self.env.action_space.n, target_policy)
+
+        # Política de comportamiento: Exploratoria con 80% aleatorio y 20% acción óptima
         behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) / self.env.action_space.n)
+
+        for state in self.Q:
+            best_action = np.argmax(self.Q[state])
+            behavior_policy[state] = np.ones(self.env.action_space.n) * 0.2 / self.env.action_space.n
+            behavior_policy[state][best_action] = 0.8  # Favorece la mejor acción actual
 
         for _ in range(num_episodes):
             episode, total_reward = self.generate_episode(behavior_policy)
@@ -118,22 +131,23 @@ class MonteCarloOffPolicy:
 
                 old_Q = self.Q[state][action]  # Valor Q antes de actualizar
 
+                # Actualización de ponderaciones y Q(s,a)
                 self.C[state][action] += W
                 self.Q[state][action] += (W / self.C[state][action]) * (G - self.Q[state][action])
 
                 # Guardamos el cambio máximo en Q
                 max_delta = max(max_delta, abs(old_Q - self.Q[state][action]))
 
-                # Comprobamos que target_policy[state] existe
-                if state in target_policy:
-                    optimal_action = np.argmax(target_policy[state])
-                    if action != optimal_action:
-                        break  # Si no coincide con la acción óptima, se detiene
-                else:
-                    break
+                # Comprobamos si la acción tomada coincide con la acción óptima de la política objetivo
+                if np.argmax(target_policy[state]) != action:
+                    break  # Si no coincide, terminamos el ajuste de este episodio
 
-                # Actualizamos el peso
+                # Ajustamos el peso de importancia W
                 W *= 1.0 / behavior_policy[state][action]
+
+                # Evitar que W explote
+                if W > 1e6:
+                    break
 
             self.deltas.append(max_delta)  # Guardar el delta de este episodio
 
