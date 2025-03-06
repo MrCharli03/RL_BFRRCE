@@ -75,9 +75,6 @@ class MonteCarloOnPolicy:
         return self.Q, episode_rewards, self.deltas
 
 
-import numpy as np
-from collections import defaultdict
-
 class MonteCarloOffPolicy:
     def __init__(self, env, gamma=1.0):
         self.env = env
@@ -101,14 +98,18 @@ class MonteCarloOffPolicy:
             total_reward += reward
         return episode, total_reward
 
-    def train(self, target_policy, num_episodes=5000):
+    def train(self, num_episodes=5000):
         """ Entrena la política objetivo con muestreo de importancia ponderado """
         episode_rewards = []
 
-        # Asegurar que target_policy tenga valores inicializados
-        target_policy = defaultdict(lambda: np.ones(self.env.action_space.n) / self.env.action_space.n, target_policy)
+        # Inicializar la política objetivo (greedy sobre Q)
+        target_policy = defaultdict(lambda: np.zeros(self.env.action_space.n))
+        
+        for state in self.Q:
+            best_action = np.argmax(self.Q[state])
+            target_policy[state] = np.eye(self.env.action_space.n)[best_action]  # Política determinista
 
-        # Política de comportamiento: Exploratoria con 80% aleatorio y 20% acción óptima
+        # Política de comportamiento: Exploratoria pero inclinada hacia la mejor acción actual
         behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) / self.env.action_space.n)
 
         for state in self.Q:
@@ -138,17 +139,18 @@ class MonteCarloOffPolicy:
                 # Guardamos el cambio máximo en Q
                 max_delta = max(max_delta, abs(old_Q - self.Q[state][action]))
 
-                # Comprobamos si la acción tomada coincide con la acción óptima de la política objetivo
-                if np.argmax(target_policy[state]) != action:
-                    break  # Si no coincide, terminamos el ajuste de este episodio
+                # Si la acción tomada no es la mejor según la política objetivo, cortamos
+                if action != np.argmax(target_policy[state]):
+                    break
 
                 # Ajustamos el peso de importancia W
                 W *= 1.0 / behavior_policy[state][action]
 
-                # Evitar que W explote
-                if W > 1e6:
+                # Evitar que W se vuelva demasiado grande
+                if W > 1e4:
                     break
 
             self.deltas.append(max_delta)  # Guardar el delta de este episodio
 
         return self.Q, episode_rewards, self.deltas
+
