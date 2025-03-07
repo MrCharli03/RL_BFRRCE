@@ -93,6 +93,14 @@ class MonteCarloOffPolicy:
         done = False
         total_reward = 0
         while not done:
+            # 🔹 Asegurar que behavior_policy[state] existe antes de usarlo
+            if state not in behavior_policy:
+                behavior_policy[state] = np.ones(self.env.action_space.n) / self.env.action_space.n  # Exploración uniforme
+
+            # 🔹 Verificar valores inválidos
+            if np.any(behavior_policy[state] < 0) or np.isnan(np.sum(behavior_policy[state])):
+                print(f"Error en behavior_policy[{state}]: {behavior_policy[state]} (suma: {np.sum(behavior_policy[state])})")
+
             action = np.random.choice(range(self.env.action_space.n), p=behavior_policy[state])
             next_state, reward, done, truncated, _ = self.env.step(action)
             done = done or truncated
@@ -123,7 +131,6 @@ class MonteCarloOffPolicy:
 
             # 🔹 **NORMALIZAR las probabilidades para que sumen 1**
             behavior_policy[state] /= np.sum(behavior_policy[state])  
-  
 
         for episode_idx in range(num_episodes):
             episode, total_reward = self.generate_episode(behavior_policy)
@@ -162,6 +169,8 @@ class MonteCarloOffPolicy:
 
             if episode_idx % 100 == 0:  # Reducir `epsilon` menos agresivamente
                 self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
+
+        return self.Q, self.episode_rewards, self.deltas
 
         return self.Q, self.episode_rewards, self.deltas
 
