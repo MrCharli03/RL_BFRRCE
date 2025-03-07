@@ -155,16 +155,16 @@ class MonteCarloOffPolicy:
                 else:
                     break  
 
-                # 🔹 Controlar el crecimiento de W 
+                # Controlar el crecimiento de W 
                 W = min(W, 10.0)
 
-                # 🔹 Evita valores NaN o Inf
+                # Evitar valores NaN o Inf
                 if W == 0 or not np.isfinite(W):
                     break  
 
             self.deltas.append(max_delta)  
 
-            # 🔹 Aplicar decaimiento de epsilon cada 100 episodios
+            # Aplicar decaimiento de epsilon cada 100 episodios
             if episode_idx % 100 == 0:
                 self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
