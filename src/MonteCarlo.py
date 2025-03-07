@@ -75,23 +75,16 @@ class MonteCarloOnPolicy:
         return self.Q, episode_rewards, self.deltas
 
 class MonteCarloOffPolicy:
-    def __init__(self, env, gamma=1.0, epsilon=0.1, min_epsilon=0.05, epsilon_decay=0.999):
-        """
-        Implementación de Monte Carlo Off-Policy con ponderación de importancia.
-        - gamma: Factor de descuento.
-        - epsilon: Exploración inicial en la política de comportamiento.
-        - min_epsilon: Valor mínimo de epsilon.
-        - epsilon_decay: Reducción de epsilon por episodio.
-        """
+    def __init__(self, env, gamma=1.0, epsilon=0.5, min_epsilon=0.05, epsilon_decay=0.9995):
         self.env = env
         self.gamma = gamma
         self.epsilon = epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
-        self.Q = defaultdict(lambda: np.zeros(env.action_space.n))  # Función de valor de acción
+        self.Q = defaultdict(lambda: np.zeros(env.action_space.n))
         self.C = defaultdict(lambda: np.zeros(env.action_space.n))  # Ponderación de importancia acumulada
-        self.deltas = []  # Para guardar los cambios máximos en Q
-        self.episode_rewards = []  # Para seguimiento de recompensas
+        self.deltas = []  
+        self.episode_rewards = []
 
     def generate_episode(self, behavior_policy):
         """ Genera un episodio siguiendo la política de comportamiento """
@@ -111,64 +104,55 @@ class MonteCarloOffPolicy:
     def train(self, num_episodes=5000, target_policy=None):
         """ Entrena la política objetivo con muestreo de importancia ponderado """
         
-        # Si no se pasa una política objetivo, se inicializa como greedy sobre Q
         if target_policy is None:
-            target_policy = defaultdict(lambda: np.zeros(self.env.action_space.n))
+            target_policy = defaultdict(lambda: np.ones(self.env.action_space.n) * 0.05)
+            for state in self.Q:
+                best_action = np.argmax(self.Q[state])
+                target_policy[state][best_action] = 0.95  
 
-        for state in self.Q:
-            best_action = np.argmax(self.Q[state])
-            target_policy[state] = np.eye(self.env.action_space.n)[best_action]  # Política determinista
-
-        # Política de comportamiento: ε-soft basada en la política objetivo
-        behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) / self.env.action_space.n)
+        # Política de comportamiento más cercana a la política objetivo
+        behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) * 0.1)
         for state in self.Q:
             best_action = np.argmax(target_policy[state])
-            behavior_policy[state] = np.ones(self.env.action_space.n) * (self.epsilon / self.env.action_space.n)
-            behavior_policy[state][best_action] += 1 - self.epsilon  # Favorece la mejor acción
+            behavior_policy[state][best_action] = 0.9  
 
-        # Entrenamiento por episodios
         for episode_idx in range(num_episodes):
             episode, total_reward = self.generate_episode(behavior_policy)
             self.episode_rewards.append(total_reward)
 
             states, actions, rewards = zip(*episode)
-            G = 0  # Retorno
-            W = 1  # Factor de ponderación de importancia
-            max_delta = 0  # Para registrar el mayor cambio en Q
+            G = 0  
+            W = 1  
+            max_delta = 0  
 
-            # Recorrido inverso del episodio
             for t in reversed(range(len(episode))):
                 state, action, reward = states[t], actions[t], rewards[t]
-                G = self.gamma * G + reward  # Cálculo del retorno
+                G = self.gamma * G + reward  
 
-                old_Q = self.Q[state][action]  # Valor Q antes de actualizar
+                old_Q = self.Q[state][action]  
 
-                # Actualización de ponderaciones y Q(s,a)
                 self.C[state][action] += W
                 self.Q[state][action] += (W / self.C[state][action]) * (G - self.Q[state][action])
 
-                # Guardamos el cambio máximo en Q
                 max_delta = max(max_delta, abs(old_Q - self.Q[state][action]))
 
-                # Verificar si la acción tomada es la mejor según la política objetivo
                 if action != np.argmax(target_policy[state]):
-                    break  # Si no coincide, terminamos la actualización
+                    break  
 
-                # Ajustar el peso de importancia
                 behavior_prob = behavior_policy[state][action]  
                 target_prob = 1 if action == np.argmax(target_policy[state]) else 0
+
                 if behavior_prob > 0:
                     W *= target_prob / behavior_prob
                 else:
-                    break  # Evita división por cero
-                
-                # Evitar explosión de W
-                if W > 1e6:
-                    break
+                    break  
 
-            self.deltas.append(max_delta)  # Guardar el delta de este episodio
+                W = np.clip(W, 1e-5, 1e5)  # Evita que W sea demasiado grande o pequeño
 
-            # Decay de epsilon para mejorar la exploración
-            self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
+            self.deltas.append(max_delta)  
+
+            if episode_idx % 100 == 0:  # Reducir `epsilon` menos agresivamente
+                self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
         return self.Q, self.episode_rewards, self.deltas
+
