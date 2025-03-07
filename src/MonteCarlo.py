@@ -86,6 +86,13 @@ class MonteCarloOffPolicy:
         self.deltas = []  
         self.episode_rewards = []
 
+    def get_behavior_policy(self, state):
+        """ Genera una política de comportamiento más estable """
+        probs = np.ones(self.env.action_space.n) * 0.1
+        best_action = np.argmax(self.Q[state])
+        probs[best_action] += 0.8  # Favorece la mejor acción
+        return probs / np.sum(probs)  # Normalizar a 1
+
     def generate_episode(self, behavior_policy):
         """ Genera un episodio siguiendo la política de comportamiento """
         episode = []
@@ -94,7 +101,8 @@ class MonteCarloOffPolicy:
         total_reward = 0
         while not done:
             if state not in behavior_policy:
-                behavior_policy[state] = np.ones(self.env.action_space.n) / self.env.action_space.n  
+                behavior_policy[state] = self.get_behavior_policy(state)
+
             action = np.random.choice(range(self.env.action_space.n), p=behavior_policy[state])
             next_state, reward, done, truncated, _ = self.env.step(action)
             done = done or truncated
@@ -113,16 +121,7 @@ class MonteCarloOffPolicy:
                 target_policy[state][best_action] = 0.95  
 
         # Política de comportamiento más cercana a la política objetivo
-        behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) * 0.2)  
-        
-        for state in self.Q:
-            if state not in target_policy:
-                target_policy[state] = np.ones(self.env.action_space.n) / self.env.action_space.n  
-
-            best_action = np.argmax(target_policy[state])  
-            behavior_policy[state] = np.ones(self.env.action_space.n) * 0.2  
-            behavior_policy[state][best_action] = 0.8  
-            behavior_policy[state] /= np.sum(behavior_policy[state])  
+        behavior_policy = defaultdict(lambda: self.get_behavior_policy(state))  
 
         for episode_idx in range(num_episodes):
             episode, total_reward = self.generate_episode(behavior_policy)
@@ -139,7 +138,7 @@ class MonteCarloOffPolicy:
 
                 old_Q = self.Q[state][action]  
 
-                # 🔹 Evita divisiones por cero en la ponderación acumulada
+                # Evitar divisiones por cero en la ponderación acumulada
                 self.C[state][action] += max(W, 1e-3)
                 self.Q[state][action] += (W / (self.C[state][action] + 1e-3)) * (G - self.Q[state][action])
 
@@ -156,7 +155,12 @@ class MonteCarloOffPolicy:
                 else:
                     break  
 
-                W = np.clip(W, 1e-3, 100)  # 🔹 Mantener W en un rango razonable
+                # 🔹 Controlar el crecimiento de W 
+                W = min(W, 10.0)
+
+                # 🔹 Evita valores NaN o Inf
+                if W == 0 or not np.isfinite(W):
+                    break  
 
             self.deltas.append(max_delta)  
 
@@ -165,4 +169,5 @@ class MonteCarloOffPolicy:
                 self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
         return self.Q, self.episode_rewards, self.deltas
+
 
