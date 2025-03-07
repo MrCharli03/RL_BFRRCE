@@ -111,10 +111,19 @@ class MonteCarloOffPolicy:
                 target_policy[state][best_action] = 0.95  
 
         # Política de comportamiento más cercana a la política objetivo
-        behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) * 0.1)
+        behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) * 0.1)  # Más exploración al inicio
+        
         for state in self.Q:
-            best_action = np.argmax(target_policy[state])
-            behavior_policy[state][best_action] = 0.9  
+            if state not in target_policy:  # Asegurar que target_policy[state] está definido
+                target_policy[state] = np.ones(self.env.action_space.n) / self.env.action_space.n  
+
+            best_action = np.argmax(target_policy[state])  
+            behavior_policy[state] = np.ones(self.env.action_space.n) * 0.05  # Exploración mínima
+            behavior_policy[state][best_action] = 0.95  # Favorecer la mejor acción
+
+            # 🔹 **NORMALIZAR las probabilidades para que sumen 1**
+            behavior_policy[state] /= np.sum(behavior_policy[state])  
+  
 
         for episode_idx in range(num_episodes):
             episode, total_reward = self.generate_episode(behavior_policy)
