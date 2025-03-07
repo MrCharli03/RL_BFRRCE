@@ -75,14 +75,14 @@ class MonteCarloOnPolicy:
         return self.Q, episode_rewards, self.deltas
 
 class MonteCarloOffPolicy:
-    def __init__(self, env, gamma=1.0, epsilon=0.5, min_epsilon=0.05, epsilon_decay=0.9995):
+    def __init__(self, env, gamma=1.0, epsilon=0.9, min_epsilon=0.1, epsilon_decay=0.999):
         self.env = env
         self.gamma = gamma
         self.epsilon = epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
         self.Q = defaultdict(lambda: np.zeros(env.action_space.n))
-        self.C = defaultdict(lambda: np.zeros(env.action_space.n))  # Ponderación de importancia acumulada
+        self.C = defaultdict(lambda: np.zeros(env.action_space.n))  
         self.deltas = []  
         self.episode_rewards = []
 
@@ -93,14 +93,8 @@ class MonteCarloOffPolicy:
         done = False
         total_reward = 0
         while not done:
-            # 🔹 Asegurar que behavior_policy[state] existe antes de usarlo
             if state not in behavior_policy:
-                behavior_policy[state] = np.ones(self.env.action_space.n) / self.env.action_space.n  # Exploración uniforme
-
-            # 🔹 Verificar valores inválidos
-            if np.any(behavior_policy[state] < 0) or np.isnan(np.sum(behavior_policy[state])):
-                print(f"Error en behavior_policy[{state}]: {behavior_policy[state]} (suma: {np.sum(behavior_policy[state])})")
-
+                behavior_policy[state] = np.ones(self.env.action_space.n) / self.env.action_space.n  
             action = np.random.choice(range(self.env.action_space.n), p=behavior_policy[state])
             next_state, reward, done, truncated, _ = self.env.step(action)
             done = done or truncated
@@ -119,17 +113,15 @@ class MonteCarloOffPolicy:
                 target_policy[state][best_action] = 0.95  
 
         # Política de comportamiento más cercana a la política objetivo
-        behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) * 0.1)  # Más exploración al inicio
+        behavior_policy = defaultdict(lambda: np.ones(self.env.action_space.n) * 0.2)  
         
         for state in self.Q:
-            if state not in target_policy:  # Asegurar que target_policy[state] está definido
+            if state not in target_policy:
                 target_policy[state] = np.ones(self.env.action_space.n) / self.env.action_space.n  
 
             best_action = np.argmax(target_policy[state])  
-            behavior_policy[state] = np.ones(self.env.action_space.n) * 0.05  # Exploración mínima
-            behavior_policy[state][best_action] = 0.95  # Favorecer la mejor acción
-
-            # 🔹 **NORMALIZAR las probabilidades para que sumen 1**
+            behavior_policy[state] = np.ones(self.env.action_space.n) * 0.2  
+            behavior_policy[state][best_action] = 0.8  
             behavior_policy[state] /= np.sum(behavior_policy[state])  
 
         for episode_idx in range(num_episodes):
@@ -147,8 +139,9 @@ class MonteCarloOffPolicy:
 
                 old_Q = self.Q[state][action]  
 
-                self.C[state][action] += W
-                self.Q[state][action] += (W / self.C[state][action]) * (G - self.Q[state][action])
+                # 🔹 Evita divisiones por cero en la ponderación acumulada
+                self.C[state][action] += max(W, 1e-3)
+                self.Q[state][action] += (W / (self.C[state][action] + 1e-3)) * (G - self.Q[state][action])
 
                 max_delta = max(max_delta, abs(old_Q - self.Q[state][action]))
 
@@ -163,14 +156,13 @@ class MonteCarloOffPolicy:
                 else:
                     break  
 
-                W = np.clip(W, 1e-5, 1e5)  # Evita que W sea demasiado grande o pequeño
+                W = np.clip(W, 1e-3, 100)  # 🔹 Mantener W en un rango razonable
 
             self.deltas.append(max_delta)  
 
-            if episode_idx % 100 == 0:  # Reducir `epsilon` menos agresivamente
+            # 🔹 Aplicar decaimiento de epsilon cada 100 episodios
+            if episode_idx % 100 == 0:
                 self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
-
-        return self.Q, self.episode_rewards, self.deltas
 
         return self.Q, self.episode_rewards, self.deltas
 
