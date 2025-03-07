@@ -37,7 +37,7 @@ class MonteCarloOnPolicy:
             total_reward += reward
         return episode, total_reward
 
-    def train(self, num_episodes=5000):  # ELIMINADO target_policy
+    def train(self, num_episodes=10000):  
         episode_rewards = []
 
         for _ in range(num_episodes):
@@ -111,7 +111,7 @@ class MonteCarloOffPolicy:
             total_reward += reward
         return episode, total_reward
 
-    def train(self, num_episodes=5000, target_policy=None):
+    def train(self, num_episodes=10000, target_policy=None):
         """ Entrena la política objetivo con muestreo de importancia ponderado """
         
         if target_policy is None:
