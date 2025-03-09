@@ -12,15 +12,15 @@ Esta práctica tiene como objetivo abordar el aprendizaje en entornos complejos,
 ## Estructura
 El repositorio se organiza de la siguiente forma:
 - **docs/**: Documentación adicional e informes en formato PDF.
-- **videos/**: Videos resultante del algoritmo de MonteCarlo).
 - **README.md**: Este archivo.
 - **main.ipynb**: Notebook principal que enlaza y organiza la ejecución de los diferentes experimentos.
 - Notebook 1 -> Breve introducción del problema
-- Notebook 2 -> Monte Carlo con políticas epsilon-soft
-- Notebook 3 -> Estudio de algunos algoritmos básicos
+- Notebook 2 -> Monte Carlo con políticas epsilon-soft en el entorno FrozenLake no resbaladizo
+- Notebook Estudio_Taxi -> Estudio de métodos tabulares y control con aproximaciones en el entorno de Taxi
+- Notebook Estudio_FrozenLake -> Estudio de métodos tabulares y control con aproximaciones en el entorno de FrozenLake resbaladizo
 
 ## Instalación y Uso
-Para poder observar los experimentos realizados así como el estudio llevado a cabo se recomienda abrir en Colab el documento "main.ipynb", ejecutarlo para importar los archivos necesarios, y desde el mismo navegar por los otros notebooks implementados, titulados "Notebook1.ipynb", "Notebook2.ipynb", "Notebook3.ipynb".
+Para poder observar los experimentos realizados así como el estudio llevado a cabo se recomienda abrir en Colab el documento "main.ipynb", ejecutarlo para importar los archivos necesarios, y desde el mismo navegar por los otros notebooks implementados, titulados "Notebook1.ipynb", "Notebook2.ipynb", "Estudio_Taxi.ipynb" y "Estudio_FrozenLake.ipynb".
 
 ## Tecnologías Utilizadas
 - **Lenguaje:** Python
